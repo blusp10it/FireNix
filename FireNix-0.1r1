@@ -1,0 +1,197 @@
+#!/bin/bash
+# Script ini digunakan untuk mengkonfigurasikan firewall di OS *nix kamu
+# Jika kamu ingin mengembangkan script ini, harap jangan hilangkan bagian copyright di bawah ini
+# ===SOC===
+# CopyRight: blusp10it and Toba Pramudia at UNPAM
+# ===EOC===
+
+clear
+# Funsi memasang firewall
+pasang () {
+     echo -e "\e[01;36mMemasang firewall...\e[00m"
+     sleep 2
+     iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+     iptables -A INPUT -p icmp -m icmp --icmp-type destination-unreachable -j REJECT --reject-with icmp-host-prohibited
+     iptables -A INPUT -p icmp -m icmp --icmp-type echo-reply -j REJECT --reject-with icmp-host-prohibited
+     iptables -A INPUT -p icmp -m icmp --icmp-type echo-request -j REJECT --reject-with icmp-host-prohibited
+     iptables -A INPUT -p icmp -m icmp --icmp-type parameter-problem -j REJECT --reject-with icmp-host-prohibited
+     iptables -A INPUT -p icmp -m icmp --icmp-type redirect -j REJECT --reject-with icmp-host-prohibited
+     iptables -A INPUT -p icmp -m icmp --icmp-type router-advertisement -j REJECT --reject-with icmp-host-prohibited
+     iptables -A INPUT -p icmp -m icmp --icmp-type router-solicitation -j REJECT --reject-with icmp-host-prohibited
+     iptables -A INPUT -p icmp -m icmp --icmp-type source-quench -j REJECT --reject-with icmp-host-prohibited
+     iptables -A INPUT -p icmp -m icmp --icmp-type time-exceeded -j REJECT --reject-with icmp-host-prohibited
+     iptables -A INPUT -p icmp -j ACCEPT
+     iptables -A INPUT -i lo -j ACCEPT
+     iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
+     iptables -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+     echo -e "\e[01;36mBerhasil Di pasang!!!\e[00m"
+     sleep 2
+     clear
+}
+# Fungsi me-reset firewall
+reset () {
+     echo -e "\e[01;36mMe-reset firewall...\e[00m"
+     sleep 2
+     iptables -F
+     arptables -F
+     echo -e "\e[01;37mProses Reset Berhasil!!!\e[00m"
+     sleep 2
+     clear
+}
+# Fungsi melihat kondisi firewall
+status () {
+     echo -e "\e[01;36mBerikut adalah konfigurasi firewall kamu...\e[00m"
+     iptables --list
+     echo -e "\e[01;37mTekan Enter untuk melanjutkan...\e[00m"
+     read return
+     if [ "$return" == "" ]; then
+          clear
+     fi
+}
+# Fungsi memblokir IP attacker
+block () {
+     echo -e "\e[01;33mBerikut adalah daftar interface kamu yang sedang UP\e[00m"
+     ifconfig | grep "Link encap" | awk '{print $1}'
+     echo -en '\e[37;44m'"\033[1mInterface yang sedang kamu gunakan adalah:\033[0m "
+     read interface
+     echo -e "\e[01;33mIP Address Router kamu adalah \e[00m\c"
+     route | grep $interface | grep default | awk '{print $2}'
+     echo -e "\e[01;33mIP Address kamu adalah \e[00m\c"
+     ifconfig $interface | grep "inet addr" | awk '{print $2}' | sed 's/addr://'
+     echo -e "\e[01;33mHarap tunggu, Proses scanning pada network sedang berlangsung.\e[00m"
+     arp -i $interface
+     echo -en '\E[37;44m'"\033[1mTentukan IP address yang ingin kamu blokir\033[0m "
+     read ip
+     echo -en '\E[37;44m'"\033[1mTentukan MAC address yang ingin kamu blokir\033[0m "
+     read mac
+     iptables -A INPUT -s $ip -j DROP
+     iptables -A OUTPUT -p tcp -d $ip -j DROP
+     arptables -A INPUT --source-mac $mac -j DROP
+     arptables -A OUTPUT -p tcp --destination-mac $mac -j DROP
+     ifconfig $interface down
+     echo -e "\e[01;37mProses Pemblokiran pada IP $ip dengan Mac Address $mac telah selesai\e[00m"
+     echo -e "\e[01;37mMengktifkan kembali Interfaces kamu di $interface\e[00m"
+     ifconfig $interface up
+     sleep 2
+     echo -e "\e[01;37mTekan Enter untuk melanjutkan...\e[00m"
+     read return
+     if [ "$return" == "" ]; then
+          clear
+     fi
+}
+# Fungsi cek port yang terbuka
+cekport () {
+echo -e "\e[01;36mBerikut adalah daftar port TCP kamu yang terbuka:\e[00m"
+echo -e "\e[0;31m======================\e[00m "
+netstat -lpn | grep -w "tcp" | awk '{print $4}' | sed 's/0.0.0.0://'
+echo -e "\e[0;31m======================\e[00m "
+# Fungsi untuk mentutup port
+tutup_port () {
+if [ "$(netstat -lpn | grep tcp | grep tcp | awk '{print $4}' | sed 's/0.0.0.0://')" == '' ]; then
+     echo -e "Kamu tidak memiliki port yang terbuka!!!"
+     sleep 2
+     clear 
+else
+echo -e "\e[0;31m=========================================\e[00m "
+echo -en "Pilih port yang akan ditutup: "
+read port
+netstat -lpn | grep tcp | grep $port | awk '{print $7}' | sed 's/\/.*//' > pid
+kill $(cat pid)
+rm pid
+echo -e "\e[0;31m=========================================\e[00m "
+echo -e "\e[01;37mBerhasil menutup port $port!!!\e[00m"
+echo -e "\e[01;37mTekan Enter untuk melanjutkan...\e[00m"
+     read return
+     if [ "$return" == "" ]; then
+          clear
+     fi
+fi
+clear
+}
+# Fungsi untuk kembali ke menu utama
+kembali () {
+clear
+}
+# Fungsi untuk keluar
+keluar () {
+echo -e "\e[01;37mTerima kasih sudah menggunakan script kami. Ingat, keamanan hanyalah soal waktu, bukan sebuah proses.\e[00m"
+exit
+}
+echo -en "\e[01;37mPilihan: \e[00m"
+echo
+cat << !
+1. Tutup port berdasarkan nomor port
+2. Kembali ke menu utama
+3. Keluar dari program ini
+!
+echo -en '\E[37;44m'"\033[1mMasukkan pilihan\033[0m "
+read pilport
+case $pilport in
+     1) tutup_port ;;
+     2) kembali ;;
+     3) keluar ;;
+     *) echo "\"$pilport\" tidak valid " ; sleep 2 ; clear ;;
+esac
+}
+# Fungsi keluar
+keluar () {
+     echo -e "\e[01;37mTerima kasih sudah menggunakan script kami. Ingat, keamanan hanyalah soal waktu, bukan sebuah proses.\e[00m"
+     exit
+}
+# Loop tak berujung (=
+while :
+do
+cat << !
+...Easy Firewall Configuration Script.....
+..............Version 0.1.................
+..........................................
+..##..##..##..##.######...#####...#####...
+..##..##.##.#.##.##....#.##...##.##.#.##..
+..##..##.##.#.##.##....#.##...##.##.#.##..
+..##..##.##.#.##.######..#######.##.#.##..
+..##..##.##.#.##.##......##...##.##...##..
+..##..##.##.#.##.##......##...##.##...##..
+...####..##..###.##......##...##.##...##..
+..............Go Open Source..............
+...Script by: blusp10it & Toba Pramudia...
+..........................................
+##########################################
+# 1. Memasang firewall                   #
+# 2. Me-reset settingan firewall         #
+# 3. Mengecek status firewall            #
+# 4. Memblokir IP attacker               #
+# 5. Mengecek port TCP yang terbuka      #
+# 6. Keluar                              #
+##########################################
+!
+# Mengecek arptables
+if [ "$(dpkg -l | grep arptables | awk '{print $2}')" != "arptables" ];then
+     echo -e "\e[0;31mPaket arptables belum terinstal!!!\e[00m \n\e[01;33msudo apt-get install arptables\e[00m" 1>&2
+     exit 1
+fi
+# Mengecek iptables
+if [ "$(dpkg -l | grep iptables | awk '{print $2}')" != "iptables" ];then
+     echo -e "\e[0;31mPaket iptables belum terinstal!!!\e[00m \n\e[01;33msudo apt-get install iptables\e[00m" 1>&2
+     exit 1
+fi
+# Are you root?
+if [ "$(id -u)" != "0" ]; then
+     echo -e "\e[0;31mJalankan script ini sebagai user root!!!\e[00m" 
+     whoami 1>&2
+     exit 1
+fi
+# Memulai program
+echo -en '\E[37;44m'"\033[1mPilih menu yang ada\033[0m " # Putih di dalam Box Biru
+read pilihan
+# Inisialisasi case
+case $pilihan in
+     1) pasang ;;
+     2) reset ;;
+     3) status ;;
+     4) block ;;
+     5) cekport ;;
+     6) keluar ;;
+     *) echo "\"$pilihan\" tidak valid " ; sleep 1 ; clear ; 
+esac
+done
+
