@@ -82,9 +82,10 @@ block () {
 # Fungsi cek port yang terbuka
 cekport () {
 echo -e "\e[01;36mBerikut adalah daftar port TCP kamu yang terbuka:\e[00m"
-echo -e "\e[0;31m======================\e[00m "
-netstat -lpn | grep -w "tcp" | awk '{print $4}' | sed 's/0.0.0.0://'
-echo -e "\e[0;31m======================\e[00m "
+echo -e "\e[0;31mPort         PID          Nama Service\e[00m"
+echo -e "\e[0;31m====         =======       ====================\e[00m "
+netstat -lpn | grep -w "tcp" | awk '{printf "%-20s %s\n", $4,$7}' | sed "s/0.0.0.0://" | awk -F "/" '{printf "%-25s %s\n", $1,$2}'
+echo -e "\e[0;31m===============================================\e[00m "
 # Fungsi untuk mentutup port
 tutup_port () {
 if [ "$(netstat -lpn | grep tcp | grep tcp | awk '{print $4}' | sed 's/0.0.0.0://')" == '' ]; then
@@ -169,7 +170,7 @@ if [ "$(dpkg -l | grep arptables | awk '{print $2}')" != "arptables" ];then
      echo -e "\e[0;31mPaket arptables belum terinstal!!!\e[00m"
      echo -en '\e[37;44m'"\033[1mApakah kamu mau menginstall paket ARPTABLES? (y/n) => \033[0m "
      read choicearp
-     if [ choicearp != 'y' ]; then
+     if [ $choicearp != 'y' ]; then
      echo -e "\e[0;31mExiting ...\e[00m \n\e[01;33mPastikan kamu sudah menginstall paket arptables sebelum melanjutkan (=\e[00m"
      exit 1
      else
@@ -178,7 +179,6 @@ if [ "$(dpkg -l | grep arptables | awk '{print $2}')" != "arptables" ];then
      echo -e "Selesai!!!"
      echo "Kembali ke menu awal..."
      sleep 2
-     clear
      fi
 fi
 # Mengecek iptables
@@ -186,7 +186,7 @@ if [ "$(dpkg -l | grep iptables | awk '{print $2}')" != "iptables" ];then
      echo -e "\e[0;31mPaket iptables belum terinstal!!!\e[00m"
      echo -en '\e[37;44m'"\033[1mApakah kamu mau menginstall paket IPTABLES? (y/n) => \033[0m "
      read choiceip
-     if [ choiceip != 'y' ]; then
+     if [ $choiceip != 'y' ]; then
      echo -e "\e[0;31mExiting ...\e[00m \n\e[01;33mPastikan kamu sudah menginstall paket iptables sebelum melanjutkan (=\e[00m"
      exit 1
      else
@@ -195,7 +195,6 @@ if [ "$(dpkg -l | grep iptables | awk '{print $2}')" != "iptables" ];then
      echo -e "Selesai!!!"
      echo "Kembali ke menu awal..."
      sleep 2
-     clear
      fi
      exit 1
 fi
