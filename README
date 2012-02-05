@@ -1,7 +1,7 @@
 Project 0.1 r3
 ===============================
 Added:
-1. Mengurutkan PORT berdasarkan nomor, PID, dan Nama Proses
+1. Mengurutkan PORT berdasarkan nomor, PID, dan Proc Name
 Fix issue:
 1. Issue automatic install dependency
 
