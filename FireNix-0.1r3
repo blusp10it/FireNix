@@ -83,7 +83,7 @@ block () {
 cekport () {
 echo -e "\e[01;36mBerikut adalah daftar port TCP kamu yang terbuka:\e[00m"
 echo -e "\e[0;31mPort         PID          Nama Service\e[00m"
-echo -e "\e[0;31m====         =======       ====================\e[00m "
+echo -e "\e[0;31m====         =======      =====================\e[00m "
 netstat -lpn | grep -w "tcp" | awk '{printf "%-20s %s\n", $4,$7}' | sed "s/0.0.0.0://" | awk -F "/" '{printf "%-25s %s\n", $1,$2}'
 echo -e "\e[0;31m===============================================\e[00m "
 # Fungsi untuk mentutup port
