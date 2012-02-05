@@ -1,10 +1,14 @@
 Project 0.1 r1
 ===============================
 Added:
+1. Otomatis menginstall dependency tanpa keluar dari program (arptables dan iptables)
+
+Project 0.1 r1
+===============================
+Added:
 1. Menutup port
 Fix issue:
 1. Menjalankan script jika user tidak menginstall paket iptables
-
 
 Project 0.1
 ===============================
