@@ -1,4 +1,4 @@
-Project 0.1 r1
+Project 0.1 r2
 ===============================
 Added:
 1. Otomatis menginstall dependency tanpa keluar dari program (arptables dan iptables)
