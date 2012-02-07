@@ -135,13 +135,13 @@ if [ "$(netstat -lpn | grep -w 'tcp')" == '' ]; then
           echo -e ""
           echo -en '\e[37;44m'"\033[1mPilih nomor dari tabel proses yang akan dihentikan: \033[0m "
           read no
-          command=$(cat /tmp/netstat | grep -w "$no" | awk '{print $11}')
+          command=$(cat /tmp/netstat | grep -w "$no" | awk '{print $1}')
           if [ "$command" == '' ]; then
                echo "Nomor tidak valid!!!"
                sleep 2
                rm /tmp/netstat
                else
-                    $command > /tmp/pid
+                    cat /tmp/netstat | grep -w "$no" | awk '{print $6}' > /tmp/pid
                     kill $(cat /tmp/pid)
                     rm /tmp/pid
                     echo -e "\e[0;31m=========================================\e[00m "
