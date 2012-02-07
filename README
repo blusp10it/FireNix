@@ -1,3 +1,11 @@
+Project 0.2 R1
+===============================
+Add:
+1. Menangani interrupt CTRL+C
+Fix:
+1. Membersihkan temporary file sebelum program exit
+2. Memperbaiki tampilan daftar port yang terbuka
+
 Project 0.2
 ===============================
 Add:

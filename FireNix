@@ -5,7 +5,30 @@
 # CopyRight: blusp10it and Toba Pramudia at UNPAM GOS
 # ===EOC===
 
+# Inisialisasi variabel
+trap ctrl_c INT
+
 clear
+# Fungsi trap, ketika user menekan CTRL+C, maka script akan membersihkan file temporer
+function ctrl_c() {
+     echo ""
+     echo -e "\e[01;36mMembersihkan...\e[00m"
+     ls /tmp/ > /tmp/daftar
+     pid=$(cat /tmp/daftar | grep -w "pid")
+     netTemp=$(cat /tmp/daftar | grep -w "netstat.tmp")
+     netstat=$(cat /tmp/daftar | grep -w "netstat")
+     if [ "$pid" == "pid" ]; then
+          rm /tmp/pid
+     fi
+     if [ "$netTemp" == "netstat.tmp" ]; then
+          rm /tmp/netstat.tmp
+     fi
+     if [ "$netstat" == "netstat" ] ; then
+          rm /tmp/netstat
+     fi
+     rm /tmp/daftar
+     exit
+}
 # Fungsi memasang firewall
 pasang () {
      echo -e "\e[01;36mMemasang firewall...\e[00m"
@@ -34,7 +57,7 @@ reset () {
      sleep 2
      iptables -F
      arptables -F
-     echo -e "\e[01;37mProses Reset Berhasil!!!\e[00m"
+     echo -e "\e[01;36mProses Reset Berhasil!!!\e[00m"
      sleep 2
      clear
 }
@@ -42,7 +65,7 @@ reset () {
 status () {
      echo -e "\e[01;36mBerikut adalah konfigurasi firewall kamu...\e[00m"
      iptables --list
-     echo -e "\e[01;37mTekan Enter untuk melanjutkan...\e[00m"
+     echo -e "\e[01;36mTekan Enter untuk melanjutkan...\e[00m"
      read return
      if [ "$return" == "" ]; then
           clear
@@ -81,33 +104,58 @@ block () {
 }
 # Fungsi cek port yang terbuka
 cekport () {
-echo -e "\e[01;36mBerikut adalah daftar port TCP kamu yang terbuka:\e[00m"
-echo -e "\e[0;34mPort         PID          Nama Service\e[00m"
-echo -e "\e[0;31m====         =======      =====================\e[00m "
-netstat -lpn | grep -w "tcp" | awk '{printf "%-20s %s\n", $4,$7}' | sed "s/0.0.0.0://" | awk -F "/" '{printf "%-25s %s\n", $1,$2}'
-echo -e "\e[0;31m===============================================\e[00m "
+netstat -lpn | grep -w "tcp" > /tmp/netstat.tmp
+arrayProto=( $(cat /tmp/netstat.tmp | awk '{print $1}') )
+arrayPort=( $(cat /tmp/netstat.tmp | awk '{print $4}' | sed "s/0.0.0.0://") )
+arrayState=( $(cat /tmp/netstat.tmp | awk '{print $6}') )
+arrayNamaProses=( $(cat /tmp/netstat.tmp | awk '{print $7}' | sed "s/.*\///") )
+arrayPID=( $(cat /tmp/netstat.tmp | awk '{print $7}' | sed "s/\/.*//") )
+namaproses=""
+id=""
+index="0"
+for item in "${arrayNamaProses[@]}"; do
+        if [ "$namaproses" ] && [ "$namaproses" == "$item" ] ; then id="$index" ; fi
+        index=$(($index+1))
+done
+echo -e " No. | Proto | Port | Status | Nama Proses |  PID  \n-----|-------|------|--------|-------------|------"
+loop=${#arrayNamaProses[@]}
+for (( i=0;i<$loop;i++)); do
+        printf ' %-3s | %-5s | %-4s | %-6s | %-11s | %-2s\n' "$(($i+1))" "${arrayProto[${i}]}" "${arrayPort[${i}]}" "${arrayState[${i}]}" "${arrayNamaProses[${i}]}" "${arrayPID[${i}]}"
+        echo "$(($i+1))" "${arrayProto[${i}]}" "${arrayPort[${i}]}" "${arrayState[${i}]}" "${arrayNamaProses[${i}]}" "${arrayPID[${i}]}" >> /tmp/netstat
+done
+rm /tmp/netstat.tmp
 # Fungsi untuk mentutup port
 tutup_port () {
-if [ "$(netstat -lpn | grep tcp | grep tcp | awk '{print $4}' | sed 's/0.0.0.0://')" == '' ]; then
+if [ "$(netstat -lpn | grep -w 'tcp')" == '' ]; then
      echo -e "Kamu tidak memiliki port yang terbuka!!!"
      sleep 2
-     clear 
-else
-echo -e "\e[0;31m=========================================\e[00m "
-echo -en "Pilih port yang akan ditutup: "
-read port
-netstat -lpn | grep tcp | grep $port | awk '{print $7}' | sed 's/\/.*//' > pid
-kill $(cat pid)
-rm pid
-echo -e "\e[0;31m=========================================\e[00m "
-echo -e "\e[01;37mBerhasil menutup port $port!!!\e[00m"
-echo -e "\e[01;37mTekan Enter untuk melanjutkan...\e[00m"
-     read return
-     if [ "$return" == "" ]; then
-          clear
-     fi
+     clear
+     rm /tmp/netstat
+     else
+          echo -e ""
+          echo -en '\e[37;44m'"\033[1mPilih nomor dari tabel proses yang akan dihentikan: \033[0m "
+          read no
+          command=$(cat /tmp/netstat | grep -w "$no" | awk '{print $11}')
+          if [ "$command" == '' ]; then
+               echo "Nomor tidak valid!!!"
+               sleep 2
+               rm /tmp/netstat
+               else
+                    $command > /tmp/pid
+                    kill $(cat /tmp/pid)
+                    rm /tmp/pid
+                    echo -e "\e[0;31m=========================================\e[00m "
+                    echo -e "\e[01;37mBerhasil menutup port $port!!!\e[00m"
+                    echo -en "\e[01;37mTekan Enter untuk melanjutkan...\e[00m"
+                    read return
+                    if [ "$return" == "" ]; then
+                         clear
+                         rm /tmp/netstat /tmp/pid
+                    fi
+          fi
 fi
 clear
+rm /tmp/netstat
 }
 # Fungsi untuk kembali ke menu utama
 kembali () {
@@ -115,13 +163,29 @@ clear
 }
 # Fungsi untuk keluar
 keluar () {
+# Membersihkan sebelum keluar
+echo -e "\nMembersihkan..."
+ls /tmp/ > /tmp/daftar
+pid=$(cat /tmp/daftar | grep -w "pid")
+netTemp=$(cat /tmp/daftar | grep -w "netstat.tmp")
+netstat=$(cat /tmp/daftar | grep -w "netstat")
+if [ "$pid" == "pid" ]; then
+     rm /tmp/pid
+fi
+if [ "$netTemp" == "netstat.tmp" ]; then
+     rm /tmp/netstat.tmp
+fi
+if [ "$netstat" == "netstat" ] ; then
+     rm /tmp/netstat
+fi
+rm /tmp/daftar
+# Bye (=
 echo -e "\e[01;37mTerima kasih sudah menggunakan script kami. Ingat, keamanan hanyalah soal waktu, bukan sebuah proses.\e[00m"
 exit
 }
-echo -en "\e[01;37mPilihan: \e[00m"
-echo
+echo -e "\e[01;37m##################################################\nPilihan: \e[00m"
 cat << !
-1. Tutup port berdasarkan nomor port
+1. Tutup port berdasarkan nomor tabel
 2. Kembali ke menu utama
 3. Keluar dari program ini
 !
@@ -143,7 +207,7 @@ keluar () {
 # Fungsi versi
 versi () {
      echo -e "\e[0;31m=========================================\e[00m "
-     echo -e "\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x46\x69\x72\x65\x4e\x69\x78\x20\x56\x65\x72\x73\x69\x20\x30\x2e\x32\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x0a\x2e\x2e\x2e\x53\x63\x72\x69\x70\x74\x20\x62\x79\x20\x62\x6c\x75\x73\x70\x31\x30\x69\x74\x20\x26\x20\x54\x6f\x62\x61\x20\x50\x72\x61\x6d\x75\x64\x69\x61\x2e\x2e\x2e" | awk '{printf "%s\n", $_}'
+     echo -e "\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x46\x69\x72\x65\x4e\x69\x78\x20\x56\x65\x72\x73\x69\x20\x30\x2e\x32\x20\x52\x31\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x0a\x2e\x2e\x2e\x53\x63\x72\x69\x70\x74\x20\x62\x79\x20\x62\x6c\x75\x73\x70\x31\x30\x69\x74\x20\x26\x20\x54\x6f\x62\x61\x20\x50\x72\x61\x6d\x75\x64\x69\x61\x2e\x2e\x2e\x0a" | awk '{printf "%s\n", $_}'
      echo -e "\e[0;31m=========================================\e[00m "
      echo -en "\e[01;37mTekan Enter untuk melanjutkan \e[00m"
      read key
@@ -157,7 +221,6 @@ while :
 do
 cat << !
 ....Easy Network Configuration Script.....
-.............Version 0.1-r1...............
 ..........................................
 ..##..##..##..##.######...#####...#####...
 ..##..##.##.#.##.##....#.##...##.##.#.##..
