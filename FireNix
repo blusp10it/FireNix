@@ -2,7 +2,7 @@
 # Script ini digunakan untuk mengkonfigurasikan firewall di OS *nix kamu
 # Jika kamu ingin mengembangkan script ini, harap jangan hilangkan bagian copyright di bawah ini
 # ===SOC===
-# CopyRight: blusp10it and Toba Pramudia at UNPAM GOS
+# CopyRight: blusp10it and red-dragon, special thanks to bl4ckp0rt
 # ===EOC===
 
 # Inisialisasi variabel
@@ -207,7 +207,7 @@ keluar () {
 # Fungsi versi
 versi () {
      echo -e "\e[0;31m=========================================\e[00m "
-     echo -e "\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x46\x69\x72\x65\x4e\x69\x78\x20\x56\x65\x72\x73\x69\x20\x30\x2e\x32\x20\x52\x31\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x0a\x2e\x2e\x2e\x53\x63\x72\x69\x70\x74\x20\x62\x79\x20\x62\x6c\x75\x73\x70\x31\x30\x69\x74\x20\x26\x20\x54\x6f\x62\x61\x20\x50\x72\x61\x6d\x75\x64\x69\x61\x2e\x2e\x2e\x0a" | awk '{printf "%s\n", $_}'
+     echo -e "\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x46\x69\x72\x65\x4e\x69\x78\x20\x56\x65\x72\x73\x69\x20\x30\x2e\x32\x20\x52\x31\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x0a\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x53\x63\x72\x69\x70\x74\x20\x62\x79\x20\x62\x6c\x75\x73\x70\x31\x30\x69\x74\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x2e\x0a" | awk '{printf "%s\n", $_}'
      echo -e "\e[0;31m=========================================\e[00m "
      echo -en "\e[01;37mTekan Enter untuk melanjutkan \e[00m"
      read key
@@ -221,16 +221,14 @@ while :
 do
 cat << !
 ....Easy Network Configuration Script.....
-..........................................
-..##..##..##..##.######...#####...#####...
-..##..##.##.#.##.##....#.##...##.##.#.##..
-..##..##.##.#.##.##....#.##...##.##.#.##..
-..##..##.##.#.##.######..#######.##.#.##..
-..##..##.##.#.##.##......##...##.##...##..
-..##..##.##.#.##.##......##...##.##...##..
-...####..##..###.##......##...##.##...##..
-..............Go Open Source..............
-..........................................
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~..=====...======.....=====.==...........~
+~..==...==.==...=====.==.==.==.==.==.==..~
+~..====.==.==...==..=.==..=.==.==.==.==..~
+~..==...==.==...=====.==..=.==.==..===...~
+~..==...==.==...==....==..=.==.==.==.==..~
+~..==...==.==...=====.==..====.==.==.==..~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ##########################################
 # 1. Memasang firewall                   #
 # 2. Me-reset settingan firewall         #
