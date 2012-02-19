@@ -75,9 +75,16 @@ loopcr="true"
 echo -e "#------------------------------CREDITS------------------------------#"
 echo -e "$copyright --- IPTables by Toba Pramudia"
 while [ $loopcr != "false" ] ; do
-#################
-#################
-#################
+     echo -en "Tekan 'Enter' untuk melanjutkan "
+     read keystroke
+     if [ $keystroke == "" ] ; then
+          echo ""
+          loopcr="false"
+     else
+          tampil error "Pilihan tidak valid"
+          sleep 1
+          loopcr="true"
+     fi
 done
 }
 #------------------------------MEMASANG IPTABLES------------------------------#
