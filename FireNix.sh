@@ -2,19 +2,19 @@
 #------------------------------COPYRIGHT------------------------------#
 # Jika kamu ingin mengembangkan scrip ini, jangan hapus bagian ini
 # (C)opyRight by blusp10it
-# Versi 0.3
+# Versi 0.3 R1
 #------------------------------COPYRIGHT------------------------------#
 trap cleanup INT
-versi="0.3"
+versi="0.3 R1"
 copyright="By blusp10it"
+os=""
 #------------------------------AKSI DALAM TERMINAL------------------------------#
 aksi() {
 error="free"
 if [ -z "$1" ] || [ -z "$2" ] ; then error="1" ; fi # Inisialisasi kode error
 if [ "$error" == "free" ] ; then
      xterm="xterm"
-     command=$2
-          if [ "$3" == "2" ] ; then echo "Command: $command" ; fi
+     command="$2> /dev/null"
      $xterm -geometry 100x15+0+0 -T "FireNix versi $versi - $1" -e "$command" # line+x+y
      return 0
 else
@@ -23,6 +23,34 @@ else
 fi
 }
 
+cekdist() {
+if [ -e "/etc/lsb-release" ] ; then
+     command=$(cat /etc/lsb-release | grep DISTRIB_ID | sed "s/DISTRIB_ID=//")
+elif [ -e "/etc/system-release" ] ; then
+     command=$(cat /etc/system-release | grep Fedora | awk '{print $1}')
+fi
+
+if [ "$command" == "BackTrack" ] ; then
+     os="debian"
+     tampil info "Distro = Debian"
+     sleep 2
+elif [ "$command" == "Ubuntu" ] ; then
+     os="debian"
+     tampil info "Distro = Debian"
+     sleep 2
+elif [ "$command" == "Fedora" ] ; then
+     os="rhel"
+     tampil info "Distro = Fedora / RHEL"
+     sleep 2
+else
+     tampil error "Terjadi kesalahan, kami tidak bisa menemukan Distro yang kamu gunakan :("
+     tampil info "Untuk membantu developer dalam mengembangkan script ini lakukan langkah berikut:"
+     echo -e "1. Copy-Paste hasil output perintah [cat /etc/*-release]
+2. Kirimkan hasil output ke email : blusp10it@gmail.com
+3. Kirimkan email dengan subject 'CEKDIST_SUBMIT'"
+     exit 0
+fi
+}
 #------------------------------TAMPILAN PESAN------------------------------#
 tampil() {
 error="free"
@@ -73,11 +101,12 @@ credits () {
 clear
 loopcr="true"
 echo -e "#------------------------------CREDITS------------------------------#"
-echo -e "$copyright --- IPTables by Toba Pramudia"
+echo -e "             $copyright --- IPTables by Toba Pramudia"
+echo -e "#-------------------------------------------------------------------#"
 while [ $loopcr != "false" ] ; do
      echo -en "Tekan 'Enter' untuk melanjutkan "
      read keystroke
-     if [ $keystroke == "" ] ; then
+     if [ "$keystroke" == "" ] ; then
           echo ""
           loopcr="false"
      else
@@ -90,48 +119,77 @@ done
 #------------------------------MEMASANG IPTABLES------------------------------#
 pasang () {
 clear
-tampil info "Mengecek IPTABLES"
-cekiptables=( $(dpkg -l | awk '{print $2}' | grep iptables) )
-if [ $cekiptables != "iptables" ] ; then
-     tampil error "IPTABLES belum terinstall"
-     loopip="true"
-     while [ $loopip != "false" ] ; do
-          read -p "[?] Apakah kamu mau menginstall paket IPTables? [y/n] "
-          if [ $REPLY == "y" ] ; then
-               tampil aksi "apt-get update"
-               aksi "UPDATING" "apt-get update" "true"
-               tampil aksi "apt-get install iptables -y"
-               aksi "Install IPTABLES" "apt-get install iptables -y" "true"
-               tampil info "Done"
-               loopip="false"
-          elif [ $REPLY == "n" ] ; then
-               tampil info "Pastikan kamu sudah menginstall paket IPTables sebelum memilih menu ini"
-               sleep 2
-               loopip="false"
-          else
-               tampil error "Pilihan tidak valid [$REPLY]"
-          fi
-     done
-else
-     echo -e "#------------------------------MEMASANG IPTABLES------------------------------#"
-     iptables="iptables -A INPUT -p icmp -m icmp --icmp-type"
-     tampil aksi "Memasang firewall ..."
-     aksi "Memasang Firewall" "iptables --flush
-     iptables -A INPUT -p icmp -m icmp --icmp-type destination-unreachable -j REJECT --reject-with icmp-host-prohibited
-     iptables -A INPUT -p icmp -m icmp --icmp-type echo-reply -j REJECT --reject-with icmp-host-prohibited
-     iptables -A INPUT -p icmp -m icmp --icmp-type echo-request -j REJECT --reject-with icmp-host-prohibited
-     iptables -A INPUT -p icmp -m icmp --icmp-type parameter-problem -j REJECT --reject-with icmp-host-prohibited
-     iptables -A INPUT -p icmp -m icmp --icmp-type redirect -j REJECT --reject-with icmp-host-prohibited
-     iptables -A INPUT -p icmp -m icmp --icmp-type router-advertisement -j REJECT --reject-with icmp-host-prohibited
-     iptables -A INPUT -p icmp -m icmp --icmp-type router-solicitation -j REJECT --reject-with icmp-host-prohibited
-     iptables -A INPUT -p icmp -m icmp --icmp-type source-quench -j REJECT --reject-with icmp-host-prohibited
-     iptables -A INPUT -p icmp -m icmp --icmp-type time-exceeded -j REJECT --reject-with icmp-host-prohibited
-     iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
-     iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-     iptables -A FORWARD -j REJECT --reject-with icmp-host-prohibited
-     sleep 2" "true"
-     tampil info "Berhasil memasang firewall"
-     sleep 1
+tampil aksi "Mengecek IPTABLES"
+if [ "$os" == "debian" ] ; then
+     cekiptables=( $(dpkg -l | awk '{print $2}' | grep iptables) )
+     if [ $cekiptables != "iptables" ] ; then
+          tampil error "IPTABLES belum terinstall"
+          loopip="true"
+          while [ $loopip != "false" ] ; do
+               read -p "[?] Apakah kamu mau menginstall paket IPTables? [y/n] "
+               if [ $REPLY == "y" ] ; then
+                    tampil aksi "apt-get update"
+                    aksi "UPDATING" "apt-get update" "true"
+                    tampil aksi "apt-get install iptables -y"
+                    aksi "Install IPTABLES" "apt-get install iptables -y" "true"
+                    tampil info "Done"
+                    loopip="false"
+               elif [ $REPLY == "n" ] ; then
+                    tampil info "Pastikan kamu sudah menginstall paket IPTables sebelum memilih menu ini"
+                    sleep 2
+                    loopip="false"
+               else
+                    tampil error "Pilihan tidak valid [$REPLY]"
+                    fi
+          done
+     else
+          echo -e "#------------------------------MEMASANG IPTABLES------------------------------#"
+          iptables="iptables -A INPUT -p icmp -m icmp --icmp-type"
+          tampil aksi "Memasang firewall ..."
+          aksi "Memasang Firewall" "iptables --flush
+          iptables -A INPUT -p icmp -m icmp --icmp-type destination-unreachable -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type echo-reply -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type echo-request -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type parameter-problem -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type redirect -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type router-advertisement -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type router-solicitation -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type source-quench -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type time-exceeded -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+          iptables -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+          sleep 2" "true"
+          tampil info "Berhasil memasang firewall"
+          sleep 1
+    fi
+elif [ "$os" == "rhel" ] ; then
+     cekiptables="rpm -qa | grep iptables | awk 'FNR == 2 {print}'"
+     if [ "$cekiptables" == "" ] ; then
+          tampil error "IPTABLES belum terinstall"
+          tampil info "Pastikan kamu sudah menginstall paket IPTables sebelum memilih menu ini"
+          sleep 3
+     else
+          echo -e "#------------------------------MEMASANG IPTABLES------------------------------#"
+          iptables="iptables -A INPUT -p icmp -m icmp --icmp-type"
+          tampil aksi "Memasang firewall ..."
+          aksi "Memasang Firewall" "iptables --flush
+          iptables -A INPUT -p icmp -m icmp --icmp-type destination-unreachable -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type echo-reply -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type echo-request -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type parameter-problem -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type redirect -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type router-advertisement -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type router-solicitation -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type source-quench -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -p icmp -m icmp --icmp-type time-exceeded -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
+          iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+          iptables -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+          sleep 2" "true"
+          tampil info "Berhasil memasang firewall"
+          sleep 1
+     fi
 fi
 }
 
@@ -140,36 +198,54 @@ reset () {
 clear
 tampil info "Mengecek IPTABLES"
 sleep 1
-cekiptables=( $(dpkg -l | awk '{print $2}' | grep iptables) )
-if [ $cekiptables != "iptables" ] ; then
-     tampil error "IPTABLES belum terinstall"
-     loopip="true"
-     while [ $loopip != "false" ] ; do
-          read -p "[?] Apakah kamu mau menginstall paket IPTables? [y/n] "
-          if [ $REPLY == "y" ] ; then
-               tampil aksi "apt-get update"
-               aksi "UPDATING" "apt-get update" "true"
-               tampil aksi "apt-get install iptables -y"
-               aksi "Install IPTABLES" "apt-get install iptables -y" "true"
-               tampil info "Done"
-               loopip="false"
-          elif [ $REPLY == "n" ] ; then
-               tampil info "Pastikan kamu sudah menginstall paket IPTables sebelum memilih menu ini"
-               sleep 2
-               loopip="false"
-          else
-               tampil error "Pilihan tidak valid [$REPLY]"
-          fi
-     done
-else
-     echo -e "#------------------------------RESET IPTABLES (FLUSH)------------------------------#"
-     tampil aksi "Mereset firewall ..."
-     aksi "Reset Firewall" "iptables --flush && sleep 2" "true"
-     sleep 1
-     aksi "Reset ArpTables" "arptables --flush && sleep 2" "true"
-     sleep 1
-     tampil info "Berhasil mereset firewall"
-     sleep 1
+if [ $os == "debian" ] ; then
+     cekiptables=( $(dpkg -l | awk '{print $2}' | grep iptables) )
+     if [ $cekiptables != "iptables" ] ; then
+          tampil error "IPTABLES belum terinstall"
+          loopip="true"
+          while [ $loopip != "false" ] ; do
+               read -p "[?] Apakah kamu mau menginstall paket IPTables? [y/n] "
+               if [ $REPLY == "y" ] ; then
+                    tampil aksi "apt-get update"
+                    aksi "UPDATING" "apt-get update" "true"
+                    tampil aksi "apt-get install iptables -y"
+                    aksi "Install IPTABLES" "apt-get install iptables -y" "true"
+                    tampil info "Done"
+                    loopip="false"
+               elif [ $REPLY == "n" ] ; then
+                    tampil info "Pastikan kamu sudah menginstall paket IPTables sebelum memilih menu ini"
+                    sleep 2
+                    loopip="false"
+               else
+                    tampil error "Pilihan tidak valid [$REPLY]"
+               fi
+          done
+     else
+          echo -e "#------------------------------RESET IPTABLES (FLUSH)------------------------------#"
+          tampil aksi "Mereset firewall ..."
+          aksi "Reset Firewall" "iptables --flush && sleep 2" "true"
+          sleep 1
+          aksi "Reset ArpTables" "arptables --flush && sleep 2" "true"
+          sleep 1
+          tampil info "Berhasil mereset firewall"
+          sleep 1
+     fi
+elif [ "$os" == "rhel" ] ; then
+     cekiptables="rpm -qa | grep iptables | awk 'FNR == 2 {print}'"
+     if [ "$cekiptables" == "" ] ; then
+          tampil error "IPTABLES belum terinstall"
+          tampil info "Pastikan kamu sudah menginstall paket IPTables sebelum memilih menu ini"
+          sleep 3
+     else
+          echo -e "#------------------------------RESET IPTABLES (FLUSH)------------------------------#"
+          tampil aksi "Mereset firewall ..."
+          aksi "Reset Firewall" "iptables --flush && sleep 2" "true"
+          sleep 1
+          aksi "Reset ArpTables" "arptables --flush && sleep 2" "true"
+          sleep 1
+          tampil info "Berhasil mereset firewall"
+          sleep 1
+     fi
 fi
 }
 
@@ -178,8 +254,10 @@ status () {
 clear
 tampil info "Mengecek IPTABLES"
 sleep 1
-cekiptables=( $(dpkg -l | awk '{print $2}' | grep iptables) )
-if [ $cekiptables != "iptables" ] ; then
+if [ "$os" == "debian" ] ; then
+     cekiptables=( $(dpkg -l | awk '{print $2}' | grep iptables) )
+fi
+if [ "$cekiptables" != "iptables" ] ; then
      tampil error "IPTABLES belum terinstall"
      loopip="true"
      while [ $loopip != "false" ] ; do
@@ -221,118 +299,198 @@ fi
 #------------------------------BLOCK IP------------------------------#
 block () {
 clear
-tampil info "Mengecek IPTABLES dan ARPTables"
+tampil aksi "Mengecek IPTABLES dan ARPTables"
 sleep 2
-cekarptables=( $(dpkg -l | awk '{print $2}' | grep arptables) )
-cekiptables=( $(dpkg -l | awk '{print $2}' | grep iptables) )
-if [ $cekarptables != "arptables" ] ; then
-     tampil error "ARPTABLES belum terinstall"
-     looparp="true"
-     while [ $looparp != "false" ] ; do
-          read -p "[?] Apakah kamu mau menginstall paket ARPTables? [y/n] "
-          if [ $REPLY == "y" ] ; then
-               tampil aksi "apt-get update"
-               aksi "UPDATING" "apt-get update" "true"
-               tampil aksi "apt-get install arptables -y"
-               aksi "Install ARPTABLES" "apt-get install arptables -y" "true"
-               tampil info "Done"
-               looparp="false"
-          elif [ $REPLY == "n" ] ; then
-               tampil info "Pastikan kamu sudah menginstall paket ARPTables sebelum memilih menu ini"
-               sleep 2
-               looparp="false"
-          else
-               tampil error "Pilihan tidak valid [$REPLY]"
-          fi
-     done
-elif [ $cekiptables != "iptables" ] ; then
-     tampil error "IPTABLES belum terinstall"
-     loopip="true"
-     while [ $loopip != "false" ] ; do
-          read -p "[?] Apakah kamu mau menginstall paket IPTables? [y/n] "
-          if [ $REPLY == "y" ] ; then
-               tampil aksi "apt-get update"
-               aksi "UPDATING" "apt-get update" "true"
-               tampil aksi "apt-get install iptables -y"
-               aksi "Install IPTABLES" "apt-get install iptables -y" "true"
-               tampil info "Done"
-               loopip="false"
-          elif [ $REPLY == "n" ] ; then
-               tampil info "Pastikan kamu sudah menginstall paket IPTables sebelum memilih menu ini"
-               sleep 2
-               loopip="false"
-          else
-               tampil error "Pilihan tidak valid [$REPLY]"
-          fi
-     done
+if [ $os == "debian" ] ; then
+     cekarptables=( $(dpkg -l | awk '{print $2}' | grep arptables) )
+     cekiptables=( $(dpkg -l | awk '{print $2}' | grep iptables) )
+     if [ $cekarptables != "arptables" ] ; then
+          tampil error "ARPTABLES belum terinstall"
+          looparp="true"
+          while [ $looparp != "false" ] ; do
+               read -p "[?] Apakah kamu mau menginstall paket ARPTables? [y/n] "
+               if [ $REPLY == "y" ] ; then
+                    tampil aksi "apt-get update"
+                    aksi "UPDATING" "apt-get update" "true"
+                    tampil aksi "apt-get install arptables -y"
+                    aksi "Install ARPTABLES" "apt-get install arptables -y" "true"
+                    tampil info "Done"
+                    looparp="false"
+               elif [ $REPLY == "n" ] ; then
+                    tampil info "Pastikan kamu sudah menginstall paket ARPTables sebelum memilih menu ini"
+                    sleep 2
+                    looparp="false"
+               else
+                    tampil error "Pilihan tidak valid [$REPLY]"
+               fi
+          done
+     elif [ $cekiptables != "iptables" ] ; then
+          tampil error "IPTABLES belum terinstall"
+          loopip="true"
+          while [ $loopip != "false" ] ; do
+               read -p "[?] Apakah kamu mau menginstall paket IPTables? [y/n] "
+               if [ $REPLY == "y" ] ; then
+                    tampil aksi "apt-get update"
+                    aksi "UPDATING" "apt-get update" "true"
+                    tampil aksi "apt-get install iptables -y"
+                    aksi "Install IPTABLES" "apt-get install iptables -y" "true"
+                    tampil info "Done"
+                    loopip="false"
+               elif [ $REPLY == "n" ] ; then
+                    tampil info "Pastikan kamu sudah menginstall paket IPTables sebelum memilih menu ini"
+                    sleep 2
+                    loopip="false"
+               else
+                    tampil error "Pilihan tidak valid [$REPLY]"
+               fi
+          done
 #------------------------------Memilih interface------------------------------#
-else
-     echo -e "#------------------------------BLOCK IP------------------------------#"
-     tampil info "Berikut adalah daftar interface yang sedang aktif (up)"
-     ifconfig | grep "Link encap" | awk '{print $1}' > /tmp/iface.tmp
-     arrayInterface=( $(cat /tmp/iface.tmp) )
-     namaInterface=""
-     id=""
-     index="0"
-     loop=${#arrayInterface[@]}
-     loopSub="false"
-     for item in "${arrayInterface[@]}"; do
-          if [ "$namaInterface" ] && [ "$namaInterface" == "$item" ] ; then id="$index" ; fi
-          index=$(($index+1))
-     done
-     echo -e "  No | Interface |\n-----|-----------|"
-     for (( i=0;i<$loop;i++)); do
-          printf ' %-3s | %-9s |\n' "$(($i+1))" "${arrayInterface[${i}]}"
-          echo "$(($i+1))" "${arrayInterface[${i}]}" >> /tmp/interface
-     done
-     while [ "$loopSub" != "true" ] ; do
-          read -p "[~] E[x]it atau pilih nomor tabel Interface: "
-          if [ "$REPLY" == "x" ] ; then cleanup
-          elif [ -z $(echo "$REPLY" | tr -dc '[:digit:]'l) ] ; then tampil error "Pilihan tidak valid, $REPLY" 1>&2
-          elif [ "$REPLY" -lt 1 ] || [ "$REPLY" -gt $loop ] ; then tampil error "Nomor tidak valid, $REPLY" 1>&2
-          else id="$(($REPLY-1))" ; loopSub="true" ; loopMain="true"
-          fi
-     done
-     interface="${arrayInterface[$id]}"
-     tampil info "Interface = $interface"
-     sleep 1
-     #------------------------------Blocking------------------------------#
-     IProute=$(ifconfig $interface | grep "inet addr" | awk '{print $2}' | sed 's/addr://')
-     tampil info "IP address router kamu adalah: $IProute"
-     tampil aksi "Scanning ARP packet ..."
-     aksi "Scanning ARP" "arp -i $interface >> /tmp/arp.tmp" "true"
-     tampil info "Berikut adalah hasil scanning: "
-     cat /tmp/arp.tmp
-     read -p "Ingin melanjutkan proses pemblokiran? [y/n] "
-     loopBlock="true" # Karena variable di pasang sebagai true, maka proses loop akan terus terjadi
-     while [ "$loopBlock" =! "false" ] ; do
-          if [ "$REPLY" == "y" ] ; then
-               echo -en "[?] Masukkan IP yang ingin kamu blok: "
-               read ip
-               tampil aksi "Memblokir IP $ip ..."
-               aksi "Memblokir IP attacker" "iptables -A INPUT -s $ip -j DROP 
-               iptables -A OUTPUT -p tcp -d $ip -j DROP
-               sleep 1" "true"
-               tampil info "Berhasil memblokir IP address attacker [$ip]"
-               echo -en "[?] Masukkan mac address yang ingin kamu blok: "
-               read mac
-               tampil aksi "Memblokir mac address $mac ..."
-               aksi "Memblokir mac address attacker" "arptables -A INPUT --source-mac $mac -j DROP
-               arptables -A OUTPUT -p tcp --destination-mac $mac -j DROP
-               sleep 1" "true"
-               tampil info "Berhasil memblokir mac address attacker [$mac]"
-               tampil aksi "Refreshing interface $interface"
-               aksi "Refreshing interface" "ifconfig $interface down && ifconfig $interface down && sleep 1" "true"
-               tampil info "Berhasil refresh, silahkan koneksikan ulang network kamu"
-               sleep 3
-               loopBlock="false" # Menghentikan proses looping
-          elif [ "$REPLY" == "n" ] ; then
-               loopBlock="false" # Menghentikan proses looping
-          else
-               tampil error "Pilihan tidak valid [$REPLY] (y/n)"
-               loopBlock="true" # Proses looping masih berlanjut
-          fi
-     done
+     else
+          echo -e "#------------------------------BLOCK IP------------------------------#"
+          tampil info "Berikut adalah daftar interface yang sedang aktif (up)"
+          ifconfig | grep "Link encap" | awk '{print $1}' > /tmp/iface.tmp
+          arrayInterface=( $(cat /tmp/iface.tmp) )
+          namaInterface=""
+          id=""
+          index="0"
+          loop=${#arrayInterface[@]}
+          loopSub="false"
+          for item in "${arrayInterface[@]}"; do
+               if [ "$namaInterface" ] && [ "$namaInterface" == "$item" ] ; then id="$index" ; fi
+               index=$(($index+1))
+          done
+          echo -e "  No | Interface |\n-----|-----------|"
+          for (( i=0;i<$loop;i++)); do
+               printf ' %-3s | %-9s |\n' "$(($i+1))" "${arrayInterface[${i}]}"
+               echo "$(($i+1))" "${arrayInterface[${i}]}" >> /tmp/interface
+          done
+          while [ "$loopSub" != "true" ] ; do
+               read -p "[~] E[x]it atau pilih nomor tabel Interface: "
+               if [ "$REPLY" == "x" ] ; then cleanup
+               elif [ -z $(echo "$REPLY" | tr -dc '[:digit:]'l) ] ; then tampil error "Pilihan tidak valid, $REPLY" 1>&2
+               elif [ "$REPLY" -lt 1 ] || [ "$REPLY" -gt $loop ] ; then tampil error "Nomor tidak valid, $REPLY" 1>&2
+               else id="$(($REPLY-1))" ; loopSub="true" ; loopMain="true"
+               fi
+          done
+          interface="${arrayInterface[$id]}"
+          tampil info "Interface = $interface"
+          sleep 1
+#------------------------------Blocking------------------------------#
+          IProute=$(ifconfig $interface | grep "inet addr" | awk '{print $2}' | sed 's/addr://')
+          tampil info "IP address router kamu adalah: $IProute"
+          tampil aksi "Scanning ARP packet ..."
+          aksi "Scanning ARP" "arp -i $interface >> /tmp/arp.tmp" "true"
+          tampil info "Berikut adalah hasil scanning: "
+          cat /tmp/arp.tmp
+          read -p "Ingin melanjutkan proses pemblokiran? [y/n] "
+          loopBlock="true" # Karena variable di pasang sebagai true, maka proses loop akan terus terjadi
+          while [ "$loopBlock" =! "false" ] ; do
+               if [ "$REPLY" == "y" ] ; then
+                    echo -en "[?] Masukkan IP yang ingin kamu blok: "
+                    read ip
+                    tampil aksi "Memblokir IP $ip ..."
+                    aksi "Memblokir IP attacker" "iptables -A INPUT -s $ip -j DROP 
+                    iptables -A OUTPUT -p tcp -d $ip -j DROP
+                    sleep 1" "true"
+                    tampil info "Berhasil memblokir IP address attacker [$ip]"
+                    echo -en "[?] Masukkan mac address yang ingin kamu blok: "
+                    read mac
+                    tampil aksi "Memblokir mac address $mac ..."
+                    aksi "Memblokir mac address attacker" "arptables -A INPUT --source-mac $mac -j DROP
+                    arptables -A OUTPUT -p tcp --destination-mac $mac -j DROP
+                    sleep 1" "true"
+                    tampil info "Berhasil memblokir mac address attacker [$mac]"
+                    tampil aksi "Refreshing interface $interface"
+                    aksi "Refreshing interface" "ifconfig $interface down && ifconfig $interface down && sleep 1" "true"
+                    tampil info "Berhasil refresh, silahkan koneksikan ulang network kamu"
+                    sleep 3
+                    loopBlock="false" # Menghentikan proses looping
+               elif [ "$REPLY" == "n" ] ; then
+                    loopBlock="false" # Menghentikan proses looping
+               else
+                    tampil error "Pilihan tidak valid [$REPLY] (y/n)"
+                    loopBlock="true" # Proses looping masih berlanjut
+               fi
+          done
+     fi
+elif [ "$os" == "rhel" ] ; then
+     cekiptables=( $(rpm -qa | grep iptables | awk 'FNR == 2 {print}') )
+     cekarptables=( $(rpm -qa | grep arptables | awk 'FNR == 2 {print}') )
+     if [ "$cekarptables" == "" ] ; then
+          tampil error "ARPTABLES belum terinstall"
+          tampil info "Pastikan kamu sudah menginstall paket arptables sebelum memilih menu ini"
+     elif [ "$cekiptables" == "" ] ; then
+          tampil error "IPTABLES belum terinstall"
+          tampil info "Pastikan kamu sudah menginstall paket arptables sebelum memilih menu ini"
+#------------------------------Memilih interface------------------------------#
+     else
+          echo -e "#------------------------------BLOCK IP------------------------------#"
+          tampil info "Berikut adalah daftar interface yang sedang aktif (up)"
+          ifconfig | grep "Link encap" | awk '{print $1}' > /tmp/iface.tmp
+          arrayInterface=( $(cat /tmp/iface.tmp) )
+          namaInterface=""
+          id=""
+          index="0"
+          loop=${#arrayInterface[@]}
+          loopSub="false"
+          for item in "${arrayInterface[@]}"; do
+               if [ "$namaInterface" ] && [ "$namaInterface" == "$item" ] ; then id="$index" ; fi
+               index=$(($index+1))
+          done
+          echo -e "  No | Interface |\n-----|-----------|"
+          for (( i=0;i<$loop;i++)); do
+               printf ' %-3s | %-9s |\n' "$(($i+1))" "${arrayInterface[${i}]}"
+               echo "$(($i+1))" "${arrayInterface[${i}]}" >> /tmp/interface
+          done
+          while [ "$loopSub" != "true" ] ; do
+               read -p "[~] E[x]it atau pilih nomor tabel Interface: "
+               if [ "$REPLY" == "x" ] ; then cleanup
+               elif [ -z $(echo "$REPLY" | tr -dc '[:digit:]'l) ] ; then tampil error "Pilihan tidak valid, $REPLY" 1>&2
+               elif [ "$REPLY" -lt 1 ] || [ "$REPLY" -gt $loop ] ; then tampil error "Nomor tidak valid, $REPLY" 1>&2
+               else id="$(($REPLY-1))" ; loopSub="true" ; loopMain="true"
+               fi
+          done
+          interface="${arrayInterface[$id]}"
+          tampil info "Interface = $interface"
+          sleep 1
+#------------------------------Blocking------------------------------#
+          IProute=$(ifconfig $interface | grep "inet addr" | awk '{print $2}' | sed 's/addr://')
+          tampil info "IP address router kamu adalah: $IProute"
+          tampil aksi "Scanning ARP packet ..."
+          aksi "Scanning ARP" "arp -i $interface >> /tmp/arp.tmp" "true"
+          tampil info "Berikut adalah hasil scanning: "
+          cat /tmp/arp.tmp
+          read -p "Ingin melanjutkan proses pemblokiran? [y/n] "
+          loopBlock="true" # Karena variable di pasang sebagai true, maka proses loop akan terus terjadi
+          while [ "$loopBlock" =! "false" ] ; do
+               if [ "$REPLY" == "y" ] ; then
+                    echo -en "[?] Masukkan IP yang ingin kamu blok: "
+                    read ip
+                    tampil aksi "Memblokir IP $ip ..."
+                    aksi "Memblokir IP attacker" "iptables -A INPUT -s $ip -j DROP 
+                    iptables -A OUTPUT -p tcp -d $ip -j DROP
+                    sleep 1" "true"
+                    tampil info "Berhasil memblokir IP address attacker [$ip]"
+                    echo -en "[?] Masukkan mac address yang ingin kamu blok: "
+                    read mac
+                    tampil aksi "Memblokir mac address $mac ..."
+                    aksi "Memblokir mac address attacker" "arptables -A INPUT --source-mac $mac -j DROP
+                    arptables -A OUTPUT -p tcp --destination-mac $mac -j DROP
+                    sleep 1" "true"
+                    tampil info "Berhasil memblokir mac address attacker [$mac]"
+                    tampil aksi "Refreshing interface $interface"
+                    aksi "Refreshing interface" "ifconfig $interface down && ifconfig $interface down && sleep 1" "true"
+                    tampil info "Berhasil refresh, silahkan koneksikan ulang network kamu"
+                    sleep 3
+                    loopBlock="false" # Menghentikan proses looping
+               elif [ "$REPLY" == "n" ] ; then
+                    loopBlock="false" # Menghentikan proses looping
+               else
+                    tampil error "Pilihan tidak valid [$REPLY] (y/n)"
+                    loopBlock="true" # Proses looping masih berlanjut
+               fi
+          done
+     fi
 fi
 }
 
@@ -422,11 +580,16 @@ done
 
 #------------------------------PROGRAM BERJALAN------------------------------#
 #------------------------------Cek ROOT access------------------------------#
-tampil info "Checking root account"
+tampil aksi "Checking root account..."
 if [ $(whoami) != "root" ] ; then
-     tampil error "Pastikan kamu menjalankan script ini sebagai root!"
+     tampil error "Pastikan kamu menjalankan script ini sebagai root! Gunakan SUDO!"
      sleep 1
-     cleanup
+     exit 0
+fi
+
+tampil aksi "Checking distribution..."
+if [ "$os" == "" ] ; then
+     cekdist
 fi
 tampil info "Done"
 sleep 1
