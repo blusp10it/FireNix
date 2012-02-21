@@ -4,6 +4,7 @@
 # (C)opyRight by blusp10it
 # Versi 0.3 R1
 #------------------------------COPYRIGHT------------------------------#
+
 trap cleanup INT
 versi="0.3 R1"
 copyright="By blusp10it"
@@ -14,8 +15,8 @@ error="free"
 if [ -z "$1" ] || [ -z "$2" ] ; then error="1" ; fi # Inisialisasi kode error
 if [ "$error" == "free" ] ; then
      xterm="xterm"
-     command="$2> /dev/null"
-     $xterm -geometry 100x15+0+0 -T "FireNix versi $versi - $1" -e "$command" # line+x+y
+     command="$2"
+     $xterm -geometry 100x15+0+0 -T "FireNix versi $versi - $1" -e "$command" > /dev/null # line+x+y
      return 0
 else
      echo -e "ERROR *_*"
@@ -24,28 +25,31 @@ fi
 }
 
 cekdist() {
+#------------------------------Debian------------------------------#
 if [ -e "/etc/lsb-release" ] ; then
      command=$(cat /etc/lsb-release | grep DISTRIB_ID | sed "s/DISTRIB_ID=//")
+#------------------------------RHEL/Fedora/CentOS------------------------------#
 elif [ -e "/etc/system-release" ] ; then
      command=$(cat /etc/system-release | grep Fedora | awk '{print $1}')
 fi
 
+#------------------------------Set Variabel OS------------------------------#
 if [ "$command" == "BackTrack" ] ; then
      os="debian"
-     tampil info "Distro = Debian"
+     tampil info "Distro = BackTrack =< 4.x "
      sleep 2
 elif [ "$command" == "Ubuntu" ] ; then
      os="debian"
-     tampil info "Distro = Debian"
+     tampil info "Distro = Debian / Ubuntu / BackTrack >= 5.x "
      sleep 2
 elif [ "$command" == "Fedora" ] ; then
      os="rhel"
-     tampil info "Distro = Fedora / RHEL"
+     tampil info "Distro = Fedora / RHEL / CentOS"
      sleep 2
 else
      tampil error "Terjadi kesalahan, kami tidak bisa menemukan Distro yang kamu gunakan :("
      tampil info "Untuk membantu developer dalam mengembangkan script ini lakukan langkah berikut:"
-     echo -e "1. Copy-Paste hasil output perintah [cat /etc/*-release]
+     echo -e "1. Copy-Paste hasil output perintah [cat /etc/*-release && cat /etc/issue && uname -a]
 2. Kirimkan hasil output ke email : blusp10it@gmail.com
 3. Kirimkan email dengan subject 'CEKDIST_SUBMIT'"
      exit 0
@@ -196,7 +200,7 @@ fi
 #------------------------------RESET IPTABLES (FLUSH)------------------------------#
 reset () {
 clear
-tampil info "Mengecek IPTABLES"
+tampil aksi "Mengecek IPTABLES"
 sleep 1
 if [ $os == "debian" ] ; then
      cekiptables=( $(dpkg -l | awk '{print $2}' | grep iptables) )
@@ -252,7 +256,7 @@ fi
 #------------------------------MEMBACA STATUS IPTABLES------------------------------#
 status () {
 clear
-tampil info "Mengecek IPTABLES"
+tampil aksi "Mengecek IPTABLES"
 sleep 1
 if [ "$os" == "debian" ] ; then
      cekiptables=( $(dpkg -l | awk '{print $2}' | grep iptables) )
@@ -278,8 +282,7 @@ if [ "$cekiptables" != "iptables" ] ; then
           fi
      done
 else
-     echo -e "#------------------------------MEMBACA STATUS IPTABLES------------------------------#"
-     tampil aksi "Listing status firewall"
+     echo -e "                   #------------------------------MEMBACA STATUS IPTABLES------------------------------#"
      echo -e "#--------------------------------------------------------------------------------------------------------------------------#"
      iptables --list
      loopStatus="true"
@@ -344,7 +347,7 @@ if [ $os == "debian" ] ; then
                     tampil error "Pilihan tidak valid [$REPLY]"
                fi
           done
-#------------------------------Memilih interface------------------------------#
+     #------------------------------Memilih interface------------------------------#
      else
           echo -e "#------------------------------BLOCK IP------------------------------#"
           tampil info "Berikut adalah daftar interface yang sedang aktif (up)"
@@ -375,7 +378,7 @@ if [ $os == "debian" ] ; then
           interface="${arrayInterface[$id]}"
           tampil info "Interface = $interface"
           sleep 1
-#------------------------------Blocking------------------------------#
+          #------------------------------Blocking------------------------------#
           IProute=$(ifconfig $interface | grep "inet addr" | awk '{print $2}' | sed 's/addr://')
           tampil info "IP address router kamu adalah: $IProute"
           tampil aksi "Scanning ARP packet ..."
@@ -384,7 +387,7 @@ if [ $os == "debian" ] ; then
           cat /tmp/arp.tmp
           read -p "Ingin melanjutkan proses pemblokiran? [y/n] "
           loopBlock="true" # Karena variable di pasang sebagai true, maka proses loop akan terus terjadi
-          while [ "$loopBlock" =! "false" ] ; do
+          while [ "$loopBlock" != "false" ] ; do
                if [ "$REPLY" == "y" ] ; then
                     echo -en "[?] Masukkan IP yang ingin kamu blok: "
                     read ip
@@ -422,8 +425,8 @@ elif [ "$os" == "rhel" ] ; then
      elif [ "$cekiptables" == "" ] ; then
           tampil error "IPTABLES belum terinstall"
           tampil info "Pastikan kamu sudah menginstall paket arptables sebelum memilih menu ini"
-#------------------------------Memilih interface------------------------------#
      else
+          #------------------------------Memilih interface------------------------------#
           echo -e "#------------------------------BLOCK IP------------------------------#"
           tampil info "Berikut adalah daftar interface yang sedang aktif (up)"
           ifconfig | grep "Link encap" | awk '{print $1}' > /tmp/iface.tmp
@@ -453,17 +456,18 @@ elif [ "$os" == "rhel" ] ; then
           interface="${arrayInterface[$id]}"
           tampil info "Interface = $interface"
           sleep 1
-#------------------------------Blocking------------------------------#
+          #------------------------------Blocking------------------------------#
           IProute=$(ifconfig $interface | grep "inet addr" | awk '{print $2}' | sed 's/addr://')
           tampil info "IP address router kamu adalah: $IProute"
           tampil aksi "Scanning ARP packet ..."
           aksi "Scanning ARP" "arp -i $interface >> /tmp/arp.tmp" "true"
           tampil info "Berikut adalah hasil scanning: "
           cat /tmp/arp.tmp
-          read -p "Ingin melanjutkan proses pemblokiran? [y/n] "
           loopBlock="true" # Karena variable di pasang sebagai true, maka proses loop akan terus terjadi
-          while [ "$loopBlock" =! "false" ] ; do
-               if [ "$REPLY" == "y" ] ; then
+          while [ "$loopBlock" != "false" ] ; do
+               echo -en "Ingin melanjutkan proses pemblokiran? [y/n] "
+               read pilihan
+               if [ "$pilihan" == "y" ] ; then
                     echo -en "[?] Masukkan IP yang ingin kamu blok: "
                     read ip
                     tampil aksi "Memblokir IP $ip ..."
@@ -483,7 +487,7 @@ elif [ "$os" == "rhel" ] ; then
                     tampil info "Berhasil refresh, silahkan koneksikan ulang network kamu"
                     sleep 3
                     loopBlock="false" # Menghentikan proses looping
-               elif [ "$REPLY" == "n" ] ; then
+               elif [ "$pilihan" == "n" ] ; then
                     loopBlock="false" # Menghentikan proses looping
                else
                     tampil error "Pilihan tidak valid [$REPLY] (y/n)"
@@ -586,13 +590,52 @@ if [ $(whoami) != "root" ] ; then
      sleep 1
      exit 0
 fi
-
+#------------------------------Cek OS------------------------------#
 tampil aksi "Checking distribution..."
-if [ "$os" == "" ] ; then
-     cekdist
-fi
+cekdist
 tampil info "Done"
 sleep 1
+
+#------------------------------Cek Xterm------------------------------#
+if [ "$os" == "debian" ] ; then
+     command=( $(dpkg -l | awk '{print $2}' | grep -w 'xterm') )
+elif [ "$os" == "rhel" ] ; then
+     command=( $(rpm -qa | grep -w 'xterm') )
+fi
+tampil aksi "Mengecek xterm"
+sleep 1
+if [ "$command" == "" ] ; then
+     tampil error "XTERM tidak terinstall"
+     if [ "$os" == "debian" ] ; then
+          install=( $(apt-get -y install xterm) )
+     elif [ "$os" == "rhel" ] ; then
+          install=( $(yum install xterm -y) )
+     fi
+     loop="true"
+     while [ "$loop" != "false" ] ; do
+          read -p "[?] Apakah kamu mau menginstall xterm? [y/n] "
+          if [ "$REPLY" == "y" ] ; then
+               tampil aksi "Menginstall xterm"
+               exec "$install"
+               loop="false"
+               tampil info "Done"
+               sleep 1
+          elif [ "$REPLY" == "n" ] ; then
+               tampil error "Pastikan kamu sudah menginstall XTERM sebelum melanjutkan"
+               sleep 1
+               exit 0
+               loop="false"
+          else
+               tampil error "Bad Input [$REPLY]"
+               sleep 1
+               loop="true"
+          fi
+     done
+else
+     tampil info "Done"
+     sleep 1
+fi
+
 #------------------------------LOOPING------------------------------#
 while : ; do
 clear

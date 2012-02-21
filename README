@@ -4,6 +4,8 @@ Add:
 1. Fedora can perform this script
 Fix:
 1. Action verbose
+2. Check dependency
+3. Loop issue
 
 Project 0.3
 ===============================
