@@ -1,7 +1,7 @@
 #!/bin/bash
 #------------------------------COPYRIGHT------------------------------#
 # FireNix Versi 0.3 R1 (Configure your network in interactive shell)
-# Copyright (C) 2012 Krisan Alfa Timur A.K.A blusp10it
+# Copyright (C) 2012 Krisan Alfa Timur A.K.A blusp10it (=
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
